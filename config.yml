@@ -1,0 +1,16 @@
+www.ondrej.it:
+  well-known: /srv/letsencrypt/www/
+  ssl-dir: /srv/letsencrypt/ssl/ondrej.it/
+  email: git@ondrej.it
+  other-domain:
+    - ondrej.it
+    - git.ondrej.it
+
+www.other.domain:
+  well-known: /srv/letsencrypt/www/
+  ssl-dir: /srv/letsencrypt/ssl/other.domain/
+  email: name@other.domain
+  other-domain:
+    - other.domain
+
+

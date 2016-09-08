@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Author Ondrej Barta
+# ondrej@ondrej.it
+# Copyright 2016
+
+import os
+import yaml
+import shutil
+import subprocess
+
+try:
+    from subprocess import DEVNULL # py3k
+except ImportError:
+    DEVNULL = open(os.devnull, "wb")
+
+
+DIR = os.path.dirname(__file__)
+
+PYTHON_ENV = os.path.join(DIR, "simp_le/venv/bin/python")
+SIMP_LE_DIR = os.path.join(DIR, "simp_le/simp_le.py")
+
+NGINX = "/usr/sbin/nginx"
+CONFIG = os.path.join(DIR, "config.yml")
+
+def load_config(source):
+    with open(source, mode="r") as y:
+        return yaml.load(y)
+
+def clean(source):
+    source = os.path.join(source, ".well-known")
+    if os.path.isdir(source):
+        shutil.rmtree(source)
+
+if __name__ == "__main__":
+    config = load_config(CONFIG)
+    return_code = 1
+
+    for c in config:
+        well_known = config[c]["well-known"]
+
+        clean(well_known)
+
+        cmd = [
+            PYTHON_ENV, SIMP_LE_DIR,
+            "--email", config[c]["email"],
+            "--default_root", well_known,
+            "--reuse_key",
+            "-f", "key.pem",
+            "-f", "cert.pem",
+            "-f", "fullchain.pem",
+            "-f", "account_key.json",
+        ]
+
+        domain = []
+        if "other-domain" in config[c]:
+            for d in config[c]["other-domain"]:
+                domain += ["-d", d]
+
+        domain += ["-d", c]
+
+        dir = config[c]["ssl-dir"]
+        if not os.path.isdir(dir):
+            os.makedirs(dir, mode=0750)
+
+        os.chdir(config[c]["ssl-dir"])
+
+        cmd += domain
+        code = subprocess.call(cmd, stdout=DEVNULL, stderr=DEVNULL)
+        if not code:
+            return_code = code
+
+        clean(well_known)
+
+    if not return_code:
+         subprocess.call([NGINX, "-s", "reload"])
