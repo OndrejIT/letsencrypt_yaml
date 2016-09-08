@@ -2,7 +2,7 @@
 
 Support:
 - simple configuration in yaml file
-- nginx autorestart
+- nginx autoreload
 
 Requirements:
 - python
